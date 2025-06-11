@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Add Allowed Email</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; background: #f0f0f0; }
+    h1 { color: #333; }
+    input, button {
+      font-size: 16px;
+      padding: 10px;
+      margin: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #28a745;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #218838;
+    }
+    #status { margin-top: 20px; font-size: 18px; color: #555; }
+  </style>
+</head>
+<body>
+
+  <h1>✅ Add Allowed Email</h1>
+  <h2 id="greetings" style="display: none;"></h2>
+  <div id="auth-section">
+    <button onclick="signIn()">Sign in with Google</button>
+  </div>
+
+  <div id="admin-section" style="display:none;">
+    <input type="email" id="emailInput" placeholder="Enter email to allow" />
+    <button onclick="addAllowedEmail()">Add Email</button>
+    <div id="status"></div>
+    <button onclick="signOut()">Sign Out</button>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyDhxPUIWPd-I2uuPLO48nOyaINKp1NOGkA",
+      authDomain: "gatecontrol-a1-1301.firebaseapp.com",
+      databaseURL: "https://gatecontrol-a1-1301-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gatecontrol-a1-1301",
+      storageBucket: "gatecontrol-a1-1301.appspot.com",
+      messagingSenderId: "811762815846",
+      appId: "1:811762815846:web:5985526d9f21d7a4796ea7"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const adminEmails = [
+      "amanojha123456@gmail.com"
+    ];
+
+    const authSection = document.getElementById("auth-section");
+    const adminSection = document.getElementById("admin-section");
+    const statusEl = document.getElementById("status");
+    const greet = document.getElementById("greetings");
+
+    function sanitizeEmail(email) {
+      return email.replace(/\./g, ',');
+    }
+
+    function signIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => {
+        console.error("Login error", err);
+        alert("Login failed: " + err.message);
+      });
+    }
+
+    function signOut() {
+        greet.style.display="none";
+      auth.signOut();
+    }
+
+    auth.onAuthStateChanged(user => {
+        if (user) {
+            const isAdmin = adminEmails.includes(user.email);
+            console.log("isadmin: "+isAdmin);
+            if (isAdmin) {
+                greet.textContent = `Welcome, ${user.displayName}`;
+                console.log(user.displayName);
+                greet.style.display = "inline-block";
+                authSection.style.display = "none";
+                adminSection.style.display = "block";
+            } else {
+                statusEl.textContent = "Access Denied. You are not an admin.";
+            }
+        } else {
+                authSection.style.display = "block";
+                adminSection.style.display = "none";
+            }
+    });
+
+    function addAllowedEmail() {
+      const email = document.getElementById("emailInput").value.trim();
+      if (!email) {
+        statusEl.textContent = "Please enter an email.";
+        return;
+      }
+
+      const sanitizedEmail = sanitizeEmail(email);
+
+      db.ref(`allowedEmails/${sanitizedEmail}`).set(true)
+        .then(() => {
+          statusEl.textContent = `${email} added to allowed list.`;
+          document.getElementById("emailInput").value = "";
+        })
+        .catch(err => {
+          statusEl.textContent = "Error adding email: " + err.message;
+          console.error(err);
+        });
+    }
+  </script>
+</body>
+</html>

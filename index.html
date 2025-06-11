@@ -5,12 +5,23 @@
   <title>Gate Controller</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; background-color: #f5f5f5; }
-    h1 { color: #333; }
-    #status { font-size: 24px; margin: 20px 0; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 2rem;
+      background-color: #f5f5f5;
+    }
+    h1 {
+      color: #333;
+    }
+    #status {
+      font-size: 24px;
+      margin: 20px 0;
+    }
     button {
       font-size: 18px;
       padding: 10px 30px;
+      margin: 10px;
       border: none;
       border-radius: 8px;
       background-color: #007bff;
@@ -25,50 +36,123 @@
 <body>
   <h1>🔐 Gate Controller</h1>
   <div id="status">Loading status...</div>
-  <button onclick="toggleGate()">Toggle Gate</button>
+  <div><p style="display: none;" id="greetings"></p></div>
+
+  <div id="auth-buttons">
+    <button id="sign-in-btn" onclick="signIn()">Sign In with Google</button>
+    <button id="sign-out-btn" onclick="signOut()" style="display: none;">Sign Out</button>
+  </div>
+
+  <button id="toggle-btn" onclick="toggleGate()" style="display: none;">Toggle Gate</button>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
 
   <script>
-    const dbURL = "https://gatecontrol-a1-1301-default-rtdb.asia-southeast1.firebasedatabase.app/gateOpen.json?auth=aHsFF6jedMN70hR4gKZZKQWxHysegD5ASBooIqsk";
 
+    function sanitizeEmail(email) {
+      console.log(email.replace(/\./g, ','));
+      return email.replace(/\./g, ',');
+    }
+    // Define Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDhxPUIWPd-I2uuPLO48nOyaINKp1NOGkA",
+      authDomain: "gatecontrol-a1-1301.firebaseapp.com",
+      databaseURL: "https://gatecontrol-a1-1301-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gatecontrol-a1-1301",
+      storageBucket: "gatecontrol-a1-1301.appspot.com",
+      messagingSenderId: "811762815846",
+      appId: "1:811762815846:web:5985526d9f21d7a4796ea7"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    const statusEl = document.getElementById("status");
+    const signInBtn = document.getElementById("sign-in-btn");
+    const signOutBtn = document.getElementById("sign-out-btn");
+    const toggleBtn = document.getElementById("toggle-btn");
+    const greet = document.getElementById("greetings");
+
+    // Firebase Realtime Database REST URL (requires auth if security rules are strict)
+    const dbURL = "https://gatecontrol-a1-1301-default-rtdb.asia-southeast1.firebasedatabase.app/gateOpen.json";
+
+    // Sign In with Google
+    function signIn() {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider).catch(err => {
+        console.error("Login error", err);
+        alert("Sign in failed: " + err.message);
+      });
+    }
+
+    // Sign Out
+    function signOut() {
+        greet.style.display="none";
+      auth.signOut();
+    }
+
+    // Update UI based on auth state
+    auth.onAuthStateChanged(async user => {
+      if (user) {
+        const sanitizedEmail = sanitizeEmail(user.email);
+
+        db.ref(`allowedEmails/${sanitizedEmail}`).once("value")
+          .then(snapshot => {
+            if (snapshot.exists() && snapshot.val() === true) {
+              greet.textContent = `Welcome, ${user.displayName}`;
+              updateStatus();
+              greet.style.display = "inline-block";
+              toggleBtn.style.display = "inline-block";
+              signOutBtn.style.display = "inline-block";
+              signInBtn.style.display = "none";
+            } else {
+              statusEl.textContent = "Access denied. Please contact admin.";
+              greet.style.display = "none";
+              toggleBtn.style.display = "none";
+              signOutBtn.style.display = "inline-block";
+              signInBtn.style.display = "none";
+            }
+          })
+          .catch(err => {
+            console.error("Error checking access", err);
+            statusEl.textContent = "Error checking access.";
+          });
+      } else {
+        statusEl.textContent = "Please sign in to control gate.";
+        toggleBtn.style.display = "none";
+        signOutBtn.style.display = "none";
+        signInBtn.style.display = "inline-block";
+      } 
+    });
+
+    // Fetch and display gate status
     function updateStatus() {
-      fetch(dbURL)
-        .then(res => res.json())
-        .then(data => {
-          const statusText = data ? "Unlocked" : "Locked";
-          document.getElementById("status").textContent = `Gate Status: ${statusText}`;
-        })
-        .catch(err => {
-          document.getElementById("status").textContent = "Error fetching status.";
-          console.error(err);
-        });
+      db.ref("gateOpen").on("value", snapshot => {
+        const isOpen = snapshot.val();
+        statusEl.textContent = `Gate Status: ${isOpen ? "Unlocked" : "Locked"}`;
+      });
     }
 
+    // Toggle gate open/locked state
     function toggleGate() {
-        fetch(dbURL)
-            .then(res => res.json())
-            .then(current => {
-            const updated = !current;
-            fetch(dbURL, {
-                method: "PUT",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(updated)
-            })
-            .then(() => {
-                updateStatus();
-
-                // UI-only reset after 6 seconds
-                setTimeout(() => {
-                document.getElementById("status").textContent = "Gate Status: Locked";
-                }, 5000);
-            });
+      db.ref("gateOpen").once("value").then(snapshot => {
+        const current = snapshot.val();
+        const updated = !current;
+        db.ref("gateOpen").set(updated).then(() => {
+          updateStatus();
+          // Optional auto-reset
+          setTimeout(() => {
+            db.ref("gateOpen").set(false);
+            updateStatus();
+          }, 6000);
         });
+      });
     }
-
-
-    // Load status initially
-    updateStatus();
-    // Refresh every 5 seconds
-    setInterval(updateStatus, 5000);
   </script>
 </body>
 </html>
