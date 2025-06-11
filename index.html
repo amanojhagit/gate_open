@@ -84,11 +84,25 @@
     // Sign In with Google
     function signIn() {
       const provider = new firebase.auth.GoogleAuthProvider();
-      auth.signInWithPopup(provider).catch(err => {
-        console.error("Login error", err);
-        alert("Sign in failed: " + err.message);
-      });
+
+      firebase.auth().signInWithRedirect(provider);
     }
+
+    firebase.auth().getRedirectResult().then(
+        result => {
+            if(result.user){
+                console.log("Signed in:",result.user.email);
+                checkAccess(result.user);
+            }
+        }
+    ).catch(error => {
+        console.error("Redirect sign-in error:",error);
+    });
+    //   auth.signInWithPopup(provider).catch(err => {
+    //     console.error("Login error", err);
+    //     alert("Sign in failed: " + err.message);
+    //   });
+    // }
 
     // Sign Out
     function signOut() {
