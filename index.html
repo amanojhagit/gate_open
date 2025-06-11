@@ -157,14 +157,14 @@
       db.ref("gateOpen").once("value").then(snapshot => {
         const current = snapshot.val();
         const updated = !current;
-        db.ref("gateOpen").set(updated).then(() => {
-          updateStatus();
-          // Optional auto-reset
-          setTimeout(() => {
-            //db.ref("gateOpen").set(false);
-            updateStatus();
-          }, 6000);
-        });
+        // db.ref("gateOpen").set(updated).then(() => {
+        //   updateStatus();
+        //   // Optional auto-reset
+        //   setTimeout(() => {
+        //     //db.ref("gateOpen").set(false);
+        //     updateStatus();
+        //   }, 6000);
+        // });
       });
     }
   </script>
