@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <!-- Aman Ojha -->
   <meta charset="UTF-8">
@@ -12,13 +13,16 @@
       padding: 2rem;
       background-color: #f5f5f5;
     }
+
     h1 {
       color: #333;
     }
+
     #status {
       font-size: 24px;
       margin: 20px 0;
     }
+
     button {
       font-size: 18px;
       padding: 10px 30px;
@@ -29,15 +33,19 @@
       color: white;
       cursor: pointer;
     }
+
     button:hover {
       background-color: #0056b3;
     }
   </style>
 </head>
+
 <body>
   <h1>🔐 Gate Controller</h1>
   <div id="status">Loading status...</div>
-  <div><p style="display: none;" id="greetings"></p></div>
+  <div>
+    <p style="display: none;" id="greetings"></p>
+  </div>
 
   <div id="auth-buttons">
     <button id="sign-in-btn" onclick="signIn()">Sign In with Google</button>
@@ -90,14 +98,14 @@
     }
 
     firebase.auth().getRedirectResult().then(
-        result => {
-            if(result.user){
-                console.log("Signed in:",result.user.email);
-                checkAccess(result.user);
-            }
+      result => {
+        if (result.user) {
+          console.log("Signed in:", result.user.email);
+          checkAccess(result.user);
         }
+      }
     ).catch(error => {
-        console.error("Redirect sign-in error:",error);
+      console.error("Redirect sign-in error:", error);
     });
     //   auth.signInWithPopup(provider).catch(err => {
     //     console.error("Login error", err);
@@ -107,7 +115,7 @@
 
     // Sign Out
     function signOut() {
-        greet.style.display="none";
+      greet.style.display = "none";
       auth.signOut();
     }
 
@@ -142,7 +150,7 @@
         toggleBtn.style.display = "none";
         signOutBtn.style.display = "none";
         signInBtn.style.display = "inline-block";
-      } 
+      }
     });
 
     // Fetch and display gate status
@@ -170,4 +178,5 @@
     }
   </script>
 </body>
+
 </html>
