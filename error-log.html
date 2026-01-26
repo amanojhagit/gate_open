@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <!-- Aman Ojha -->
+    <meta charset="UTF-8">
+    <title>Error Log - Gate Controller</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 2rem;
+            background-color: #f5f5f5;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-links {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .nav-links a {
+            color: #007bff;
+            text-decoration: none;
+            font-size: 16px;
+        }
+
+        .nav-links a:hover {
+            text-decoration: underline;
+        }
+
+        .error-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .error-label {
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 0.5rem;
+        }
+
+        .error-value {
+            background-color: #f8f9fa;
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid #dc3545;
+            font-family: 'Courier New', monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .error-type {
+            border-left-color: #ffc107;
+        }
+
+        .timestamp {
+            border-left-color: #28a745;
+        }
+
+        .no-error {
+            text-align: center;
+            padding: 2rem;
+            color: #28a745;
+            font-size: 18px;
+        }
+
+        .refresh-btn {
+            display: block;
+            margin: 2rem auto 0;
+            font-size: 16px;
+            padding: 10px 30px;
+            border: none;
+            border-radius: 8px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+
+        .refresh-btn:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>⚠️ Error Log</h1>
+
+        <div class="nav-links">
+            <a href="index.html">← Back to Gate Controller</a>
+        </div>
+
+        <div id="errorDisplay">
+            <div class="no-error">Loading error log...</div>
+        </div>
+
+        <button class="refresh-btn" onclick="loadErrorLog()">Refresh</button>
+    </div>
+
+    <script>
+        const dbURL = "https://gatecontrol-a1-1301-default-rtdb.asia-southeast1.firebasedatabase.app/errorLog.json?auth=aHsFF6jedMN70hR4gKZZKQWxHysegD5ASBooIqsk";
+
+        function loadErrorLog() {
+            fetch(dbURL)
+                .then(res => res.json())
+                .then(errorLog => {
+                    const displayDiv = document.getElementById("errorDisplay");
+
+                    if (!errorLog || Object.keys(errorLog).length === 0) {
+                        displayDiv.innerHTML = '<div class="no-error">✓ No errors logged</div>';
+                        return;
+                    }
+
+                    // Display the error log
+                    displayDiv.innerHTML = `
+            <div class="error-section">
+              <div class="error-label">⏱️ Timestamp:</div>
+              <div class="error-value timestamp">${errorLog.timestamp || 'N/A'}</div>
+            </div>
+
+            <div class="error-section">
+              <div class="error-label">🔴 Error Type:</div>
+              <div class="error-value error-type">${errorLog.error_type || 'N/A'}</div>
+            </div>
+
+            <div class="error-section">
+              <div class="error-label">💬 Error Message:</div>
+              <div class="error-value">${errorLog.error_message || 'N/A'}</div>
+            </div>
+
+            <div class="error-section">
+              <div class="error-label">📋 Traceback:</div>
+              <div class="error-value">${errorLog.traceback || 'N/A'}</div>
+            </div>
+          `;
+                })
+                .catch(err => {
+                    document.getElementById("errorDisplay").innerHTML =
+                        `<div class="no-error" style="color: #dc3545;">Error fetching log: ${err.message}</div>`;
+                    console.error("Error fetching error log:", err);
+                });
+        }
+
+        // Load error log on page load
+        loadErrorLog();
+
+        // Auto-refresh every 10 seconds
+        setInterval(loadErrorLog, 10000);
+    </script>
+</body>
+
+</html>
